@@ -19,7 +19,7 @@ def _resolve_device(name: str) -> torch.device:
     return torch.device(name)
 
 
-def train(config: dict, logger=None) -> ChessPolicyNet:
+def train(config: dict, logger=None, verbose: bool = False) -> ChessPolicyNet:
     device = _resolve_device(config["train"]["device"])
     policy = ChessPolicyNet.from_config(config).to(device)
     optimizer = torch.optim.Adam(policy.parameters(), lr=config["ppo"]["lr"])
@@ -41,4 +41,31 @@ def train(config: dict, logger=None) -> ChessPolicyNet:
                     step, games[: config["logging"]["sample_games_per_checkpoint"]]
                 )
 
+        if verbose:
+            print(f"step {step}: {stats}")
+
     return policy
+
+
+def _main() -> None:
+    import argparse
+
+    import yaml
+
+    from rlchess.logging import RunLogger
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", default="configs/default.yaml")
+    args = parser.parse_args()
+
+    with open(args.config) as f:
+        config = yaml.safe_load(f)
+
+    logger = RunLogger(config)
+    print(f"Run dir: {logger.run_dir}")
+    train(config, logger=logger, verbose=True)
+    print(f"Done. See {logger.run_dir}")
+
+
+if __name__ == "__main__":
+    _main()

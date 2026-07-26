@@ -1,9 +1,13 @@
+import subprocess
+import sys
+
 import numpy as np
 import pytest
+import torch
 import yaml
 
 from rlchess.policy import ChessPolicyNet
-from rlchess.train import train
+from rlchess.train import _resolve_device, train
 
 
 class _StubLogger:
@@ -56,3 +60,30 @@ def test_tiny_train_run_logs_finite_stats(tiny_config):
             assert np.isfinite(value), f"step {step} stat {key} not finite: {value}"
     # checkpoint_interval=1 -> a checkpoint every step
     assert logger.checkpoints == list(range(tiny_config["train"]["num_updates"]))
+
+
+def test_resolve_device_explicit_cpu():
+    assert _resolve_device("cpu") == torch.device("cpu")
+
+
+def test_resolve_device_auto_falls_back_to_cpu_without_cuda(monkeypatch):
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    assert _resolve_device("auto") == torch.device("cpu")
+
+
+def test_cli_entry_point_runs_end_to_end(tiny_config, tmp_path):
+    tiny_config["logging"]["run_dir"] = str(tmp_path / "runs")
+    tiny_config["logging"]["run_id"] = "cli-test"
+    config_path = tmp_path / "config.yaml"
+    with open(config_path, "w") as f:
+        yaml.safe_dump(tiny_config, f)
+
+    result = subprocess.run(
+        [sys.executable, "-m", "rlchess.train", "--config", str(config_path)],
+        capture_output=True, text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    run_dir = tmp_path / "runs" / "cli-test"
+    assert (run_dir / "metrics.jsonl").exists()
+    assert (run_dir / "checkpoints" / "ckpt_0.pt").exists()
