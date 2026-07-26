@@ -1,7 +1,7 @@
 # Resolved config for a training run. Every hyperparameter/path used by the
 # code lives here, not hardcoded in modules (see planning/CLAUDE.md).
 #
-# Sections beyond env/policy (ppo, checkpointing, eval, video) are added in
+# Sections beyond env/policy/ppo/train/logging (eval, video) are added in
 # later build slices, once those modules exist.
 
 env:
@@ -19,3 +19,30 @@ policy:
   num_filters: 64
   num_res_blocks: 6
   value_hidden_dim: 64
+
+ppo:
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip: 0.2
+  lr: 0.0003
+  epochs: 4
+  minibatch_size: 256
+  entropy_coef: 0.01
+  value_coef: 0.5
+  max_grad_norm: 0.5
+  games_per_batch: 8
+
+train:
+  num_updates: 1000
+  # "auto" resolves to cuda if available, else cpu -- no CUDA-only
+  # assumptions, since local dev runs on CPU while real training targets a
+  # single cloud GPU (Kaggle).
+  device: auto
+
+logging:
+  run_dir: runs
+  # null -> auto-generate a timestamp-based run id.
+  run_id: null
+  rolling_window: 50
+  checkpoint_interval: 10
+  sample_games_per_checkpoint: 4

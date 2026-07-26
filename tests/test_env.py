@@ -115,7 +115,9 @@ def test_random_games_terminate(config):
             obs, reward, done, info = env.step(action)
             steps += 1
             assert steps <= env.max_moves
+            assert info["result"] is None if not done else info["result"] is not None
         assert done
+        assert info["result"] in ("1-0", "0-1", "1/2-1/2")
 
 
 def test_max_move_cap_adjudicates_by_material():
@@ -138,9 +140,12 @@ def test_max_move_cap_adjudicates_by_material():
         action = encode_move(move)
         obs, reward, done, info = env.step(action)
     assert done
-    # White is up material -> adjudicated "1-0". The 4th (last) ply was
-    # Black's move, so the reward returned is from Black's perspective: a
-    # loss.
+    # White is up material -> adjudicated "1-0", exposed via info["result"]
+    # even though board.result() itself stays "*" (python-chess never
+    # decided the game was over; the adjudication is env-level only).
+    assert info["result"] == "1-0"
+    # The 4th (last) ply was Black's move, so the reward returned is from
+    # Black's perspective: a loss.
     assert reward == -1.0
 
 
@@ -156,6 +161,7 @@ def test_reward_sign_scholars_mate(config):
         obs, reward, done, info = env.step(action)
     assert done
     assert env.board.result(claim_draw=True) == "1-0"
+    assert info["result"] == "1-0"
     assert reward == 1.0  # White delivered mate
 
 

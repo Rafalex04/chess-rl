@@ -218,8 +218,14 @@ def _adjudicate_by_material(board: chess.Board) -> str:
     return "1/2-1/2"
 
 
-def _terminal_reward(result: str, mover_color: bool) -> float:
-    """Terminal reward from the perspective of the side that just moved."""
+def terminal_reward(result: str, mover_color: bool) -> float:
+    """Terminal reward from the perspective of the side that just moved.
+
+    Public (not module-private) because ppo.py's self-play loop reuses this
+    exact logic to compute the *other* colour's propagated terminal reward
+    when their last move wasn't the one that ended the game -- one
+    implementation, not a second copy that could silently drift out of sync.
+    """
     if result == "1/2-1/2":
         return 0.0
     mover_won = (result == "1-0") == (mover_color == chess.WHITE)
@@ -276,7 +282,7 @@ class ChessEnv:
             result = _adjudicate_by_material(self.board)
 
         if done:
-            reward = _terminal_reward(result, mover_color)
+            reward = terminal_reward(result, mover_color)
         elif self.material_shaping_enabled:
             material_after = _material_balance(self.board, mover_color)
             reward = self.material_shaping_coef * (material_after - material_before)
@@ -294,5 +300,9 @@ class ChessEnv:
             "uci": move.uci(),
             "fen": self.board.fen(),
             "legal_action_mask": mask,
+            # Authoritative result string once done=True (natural or
+            # move-cap-adjudicated); board.result() alone can't be used by
+            # callers since it stays "*" after cap-based adjudication.
+            "result": result if done else None,
         }
         return obs, reward, done, info

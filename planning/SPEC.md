@@ -56,8 +56,19 @@ and PPO's later logprob recomputation) before softmax.
 - Discount γ configurable (default 0.99).
 
 **Step / reset:** standard gym-like API (`reset()`, `step(action) ->
-obs, reward, done, info`). `info` carries the SAN/UCI move and the resulting
-FEN so games can be logged.
+obs, reward, done, info`). `info` carries the SAN/UCI move, the resulting
+FEN, and `"result"` (`None` while `done=False`; the authoritative result
+string once `done=True` — natural or move-cap-adjudicated; `board.result()`
+alone isn't enough since it stays `"*"` after a cap-based adjudication,
+which python-chess itself never decided). `rlchess/env.py`'s
+`terminal_reward(result, mover_color)` is public (not module-private)
+because `rlchess/ppo.py`'s self-play loop reuses it to compute the *other*
+colour's propagated terminal reward.
+
+Note: the terminal step's reward is **pure** terminal (`±1`/`0`), with no
+material-shaping term added on top, even on a capturing mating move —
+intentional simplification (keeps the terminal signal clean), not an
+oversight.
 
 **Termination:** uses `board.is_game_over(claim_draw=True)` (not the
 python-chess default `claim_draw=False`) so 50-move-rule and threefold-
@@ -95,6 +106,25 @@ Input: board tensor. Output: (policy logits over action space, scalar value).
 - Mask MUST be applied both when acting and when recomputing logprobs in the
   update, or the ratio is wrong.
 
+**Implementation notes (`rlchess/ppo.py`):**
+- Each self-play game is split into two `ColorTrajectory`s (one per colour)
+  since each colour is its own decision process; GAE/returns are computed
+  **per colour's own move sequence**, not the interleaved ply order.
+  Episodic bootstrap: value `0.0` after each trajectory's last step (the
+  move cap is itself a terminal event with its own adjudicated reward, not a
+  truncation).
+- Terminal-reward propagation (the reward-sign trap): `env.step` already
+  gives the correct terminal reward to whichever colour's move ended the
+  game. The *other* colour's last recorded reward is **overwritten** (not
+  added to) with `terminal_reward(result, other_color)` —
+  `_propagate_terminal_reward` does this, unit-tested standalone with
+  synthetic reward lists.
+- Masking uses `torch.distributions.Categorical(logits=masked_logits)`
+  (not manual softmax + elementwise multiply) for sampling, log-prob, and
+  entropy — its `entropy()` clamps `-inf` logits internally, avoiding a
+  `0 * -inf = nan` failure mode that manual masked-softmax entropy code
+  would hit.
+
 ## 4. Evaluation — accuracy (`rlchess/eval.py`)
 
 - Uses **Stockfish** via `python-chess`'s UCI interface. Binary path from
@@ -123,6 +153,15 @@ Each run writes to `runs/<run-id>/`:
   standard PGN so both the video renderer and the JS board can read them.
 
 Checkpoint interval configurable (by step or games-played count).
+
+**Implementation notes (`rlchess/logging.py`):** `RunLogger(config)` derives
+`run_dir` from `config["logging"]["run_dir"] / run_id`, where `run_id` is
+`config["logging"]["run_id"]` if set, else an auto-generated
+`%Y%m%d-%H%M%S` timestamp. Checkpoint-time sample games are reused directly
+from that step's self-play batch (already-played games from the current
+policy at that step) rather than playing a separate batch. Every
+`metrics.jsonl` line includes `rolling_accuracy_cp: null` until `eval.py`
+exists and is wired into `train.py`.
 
 ## 6. Timelapse video (`rlchess/render_video.py`)
 
