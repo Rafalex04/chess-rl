@@ -139,6 +139,18 @@ Input: board tensor. Output: (policy logits over action space, scalar value).
   rolling window are all config knobs. Keep eval cheap enough not to bottleneck
   training; it can also run offline over logged PGN if preferred.
 
+**Resolved: runs offline over logged PGN** (`rlchess/eval.py`, `python -m
+rlchess.eval --run runs/<id>`), not inline during training — keeps
+self-play/PPO throughput and reliability independent of Stockfish being
+installed. Guarded via `is_stockfish_available(config)`
+(`STOCKFISH_PATH` env var, falling back to `config["eval"]["stockfish_path"]`,
+checked with `shutil.which`); every entry point no-ops cleanly when
+Stockfish isn't available. Walks `runs/<id>/games/ckpt_*/*.pgn` in
+checkpoint-step order and writes a **separate** `runs/<id>/accuracy.jsonl`
+(one line per evaluated checkpoint: `{step, rolling_accuracy_cp}`) rather
+than patching `metrics.jsonl` in place — JSONL logs are append-only, not
+rewritten. Dashboard/video join the two files by `step`.
+
 ## 5. Logging (`rlchess/logging.py`)
 
 Each run writes to `runs/<run-id>/`:
@@ -212,6 +224,7 @@ checkpoints for video.
 
 - ~~Exact action-space encoding (4672 vs from×to×promo).~~ Resolved: 4672
   AlphaZero encoding (sec 1).
-- Whether Stockfish eval runs inline during training or offline over PGN.
+- ~~Whether Stockfish eval runs inline during training or offline over PGN.~~
+  Resolved: offline over PGN (sec 4).
 - Video renderer: `python-chess` SVG→PNG (cairosvg) vs a dedicated board image
   lib.

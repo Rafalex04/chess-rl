@@ -46,3 +46,13 @@ logging:
   rolling_window: 50
   checkpoint_interval: 10
   sample_games_per_checkpoint: 4
+
+eval:
+  # STOCKFISH_PATH env var overrides this. null + no env var -> accuracy
+  # eval is skipped entirely (rlchess/eval.py guards this; the rest of the
+  # pipeline runs fine without Stockfish).
+  stockfish_path: null
+  sample_rate: 0.25
+  depth: 8
+  cp_clip: 1000
+  rolling_window: 50
