@@ -1,0 +1,21 @@
+# Resolved config for a training run. Every hyperparameter/path used by the
+# code lives here, not hardcoded in modules (see planning/CLAUDE.md).
+#
+# Sections beyond env/policy (ppo, checkpointing, eval, video) are added in
+# later build slices, once those modules exist.
+
+env:
+  # Max plies (half-moves) before the game is cut off and adjudicated by
+  # material balance, to bound episode length (planning/CLAUDE.md: "enforce
+  # a max-move cap that adjudicates by material").
+  max_moves: 200
+  # Reward shaping: small bonus/penalty for the change in material balance
+  # caused by the mover's own move. Kept low so it doesn't dominate the
+  # terminal +-1/0 outcome reward (planning/SPEC.md sec 0).
+  material_shaping_enabled: true
+  material_shaping_coef: 0.01
+
+policy:
+  num_filters: 64
+  num_res_blocks: 6
+  value_hidden_dim: 64

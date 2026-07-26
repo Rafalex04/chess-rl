@@ -1,0 +1,6 @@
+torch==2.12.1
+torchvision==0.27.1
+numpy==1.26.4
+PyYAML==6.0.1
+chess==1.11.2
+pytest==7.4.4
