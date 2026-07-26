@@ -33,7 +33,7 @@ ppo:
   games_per_batch: 8
 
 train:
-  num_updates: 1000
+  num_updates: 400
   # "auto" resolves to cuda if available, else cpu -- no CUDA-only
   # assumptions, since local dev runs on CPU while real training targets a
   # single cloud GPU (Kaggle).
