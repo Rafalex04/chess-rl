@@ -219,6 +219,20 @@ endpoint).
   training and lets you jump to the sampled game at each checkpoint — the
   interactive analogue of the MP4.
 
+**Implementation notes:** Vite + React 18 + `react-chessboard` v4 (not v5 —
+v5 requires Node >=20; v4's peer deps just need React >=16.14, and this
+project targets Node 18) + `chess.js` v1 (`loadPgn` + `history({verbose:
+true})`, whose `Move.after` gives the FEN at each ply) + `recharts` v3. "A
+tiny endpoint" (SPEC's phrasing above) is a Vite dev-server middleware
+(`dashboard/vite.config.js`) reading `../runs` directly off disk and
+exposing it as a small read-only JSON API (`/api/runs`,
+`/api/runs/:id/{metrics,accuracy,checkpoints}`,
+`/api/runs/:id/games/:step/:file`) — so `npm run dev` alone is enough, no
+separate backend process, matching README's quick start. The win chart's
+"scrubber" and timelapse mode's scrubber are the same control (one
+training-step slider over checkpoint steps that have sampled games), since
+splitting them would just be redundant UI for the same interaction.
+
 ## 8. Config (`configs/default.yaml`)
 
 All knobs live here: network size, PPO hyperparams (clip, lr, epochs,

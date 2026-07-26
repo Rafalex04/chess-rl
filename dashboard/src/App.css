@@ -1,0 +1,82 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f7f7f8;
+  color: #1a1a1a;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 24px 48px;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 1.4rem;
+}
+
+.empty-state {
+  color: #666;
+  font-style: italic;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+@media (max-width: 720px) {
+  .charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-panel h2,
+.timelapse h2 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.timelapse {
+  margin-top: 32px;
+}
+
+.board-replay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.board-replay-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.board-replay-controls input[type='range'] {
+  flex: 1;
+  min-width: 160px;
+}
+
+.run-selector select,
+.board-replay-controls select {
+  font: inherit;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
