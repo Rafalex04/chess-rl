@@ -4,3 +4,5 @@ numpy==1.26.4
 PyYAML==6.0.1
 chess==1.11.2
 pytest==7.4.4
+Pillow==10.2.0
+matplotlib==3.6.3

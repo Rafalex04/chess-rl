@@ -191,6 +191,20 @@ times** so you can watch real games at different training stages.
   MP4 via ffmpeg. Frame rate + slow-motion move duration configurable.
 - Output: `runs/<run-id>/timelapse.mp4`.
 
+**Resolved: boards are drawn directly with Pillow** (a filled/outlined
+circle + K/Q/R/B/N/P letter per piece), not `python-chess` SVG→cairosvg —
+avoids a system libcairo dependency that isn't guaranteed present on every
+machine this runs on (dev box vs. a Kaggle GPU notebook). Frames are PNGs in
+a temp dir, encoded via `ffmpeg -framerate ... -i frame_%06d.png -c:v
+libx264`. Metric-timelapse frames are `matplotlib` (`Agg` backend, headless)
+figures of the rolling win-rate and rolling-accuracy curves, revealing more
+of the x-axis per frame; if `accuracy.jsonl` doesn't exist (no Stockfish),
+that panel just shows "Accuracy unavailable." Slow-motion checkpoints:
+`select_slow_motion_checkpoints` maps each requested fraction to the
+*nearest available* checkpoint step that actually has sampled games on
+disk. CLI: `python -m rlchess.render_video --run runs/<id> --slow-at
+0.1 0.35 0.6 0.85 1.0` (matches README).
+
 ## 7. Dashboard (`dashboard/`, React)
 
 Reads the same `runs/<run-id>/` outputs (served statically or via a tiny
@@ -226,5 +240,5 @@ checkpoints for video.
   AlphaZero encoding (sec 1).
 - ~~Whether Stockfish eval runs inline during training or offline over PGN.~~
   Resolved: offline over PGN (sec 4).
-- Video renderer: `python-chess` SVG→PNG (cairosvg) vs a dedicated board image
-  lib.
+- ~~Video renderer: `python-chess` SVG→PNG (cairosvg) vs a dedicated board
+  image lib.~~ Resolved: Pillow, drawn directly (sec 6).

@@ -56,3 +56,11 @@ eval:
   depth: 8
   cp_clip: 1000
   rolling_window: 50
+
+video:
+  fps: 30
+  board_size: 480
+  # ~1.4 moves/sec, within SPEC's "1-2 moves/sec" target.
+  slow_motion_seconds_per_move: 0.7
+  metric_timelapse_seconds: 4
+  slow_at: [0.1, 0.35, 0.6, 0.85, 1.0]
